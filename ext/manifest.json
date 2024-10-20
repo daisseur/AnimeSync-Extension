@@ -3,6 +3,9 @@
     "name": "Video Sync Extension",
     "version": "1.0",
     "permissions": ["activeTab", "scripting", "storage"],
+    "host_permissions": [
+      "<all_urls>"
+    ],
     "background": {
       "service_worker": "background.js"
     },

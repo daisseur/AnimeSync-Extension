@@ -25,8 +25,8 @@ wss.on('connection', (ws) => {
       rooms[roomId].push(ws);
       console.log(`Client joined room ${roomId}`);
     } else if (data.action === 'play' || data.action === 'pause' || data.action === 'seek') {
-      console.log(`Received ${data.action} event in room ${roomId}`);
       const roomId = data.roomId;
+      console.log(`Received ${data.action} event in room ${roomId}`);
       if (rooms[roomId]) {
         rooms[roomId].forEach((client) => {
           if (client !== ws && client.readyState === WebSocket.OPEN) {
