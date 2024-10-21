@@ -4,6 +4,35 @@ let protocol = "ws";
 let host = "localhost";
 let port = "3007";
 
+const militaryAlphabet = [
+  'alpha',
+  'bravo',
+  'charlie',
+  'delta',
+  'echo',
+  'foxtrot',
+  'golf',
+  'hotel',
+  'india',
+  'juliett',
+  'kilo',
+  'lima',
+  'mike',
+  'november',
+  'oscar',
+  'papa',
+  'quebec',
+  'romeo',
+  'sierra',
+  'tango',
+  'uniform',
+  'victor',
+  'whiskey',
+  'x-ray',
+  'yankee',
+  'zulu'
+];
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(`Receiving..`, message, sender);
   switch (message.action) {
@@ -89,7 +118,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Génère un ID de room aléatoire
 function generateRoomId() {
-  return Math.random().toString(36).substring(2, 10);
+  const value = Math.random().toFixed(2) * 100;
+  const letters = Math.random().toString(26).substring(2, 4).toUpperCase();
+  return letters + "-" + militaryAlphabet[value % 26];
 }
 
 // Initialise la connexion WebSocket avec le serveur
@@ -98,7 +129,7 @@ function initializeSocket(roomId) {
     socket.close();  // Ferme toute connexion WebSocket précédente avant d'en ouvrir une nouvelle
   }
 
-  socket = new WebSocket(`${protocol}://${host}:${port}`);
+  socket = new WebSocket(`${protocol}://${host}${port==="0"?"":`:${port}`}`);
 
   socket.addEventListener('open', () => {
     const joinMessage = JSON.stringify({ action: 'joinRoom', roomId: roomId });
