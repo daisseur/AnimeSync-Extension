@@ -1,0 +1,7 @@
+2024-10-21 14:46:28 info: [32mServer started on http://0.0.0.0:3007[39m
+2024-10-21 15:01:55 info: [34mClient connected from IP: 127.0.0.1[39m
+2024-10-21 15:01:55 info: [32mCreated room wtrf9j7l[39m
+2024-10-21 15:01:55 info: [33m[1] Client from IP 127.0.0.1 joined room wtrf9j7l[39m
+2024-10-21 15:01:56 info: [35mSTATUS (127.0.0.1) play event in room wtrf9j7l[39m
+2024-10-21 15:01:56 info: [35mSTATUS (127.0.0.1) seek event in room wtrf9j7l[39m
+2024-10-21 15:01:57 info: [35mSTATUS (127.0.0.1) pause event in room wtrf9j7l[39m

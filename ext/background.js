@@ -2,7 +2,7 @@ let socket = null;
 let roomId = null;
 let protocol = "ws";
 let host = "localhost";
-let port = "3000";
+let port = "3007";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(`Receiving..`, message, sender);
@@ -65,6 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case 'redirect':
+      console.log('Redirecting to:', message.url);
       chrome.tabs.update(sender.tab.id, { url: message.url }, (tab) => {
         // Attendre que la page soit chargée avant d'injecter le script
         chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
@@ -84,6 +85,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.warn(`Unknown action: ${message.action}`);
   }
 });
+
 
 // Génère un ID de room aléatoire
 function generateRoomId() {
@@ -229,8 +231,11 @@ function injectNewPageScript() {
     // Informer le background script que tout est prêt
     chrome.runtime.sendMessage({ action: 'videoReady' });
     
-  } else {
-    console.log("Video element not found, retrying...");
-    setTimeout(injectNewPageScript, 500);
-  }
+  } 
+  // else {
+  //   console.log("Video element not found, retrying...");
+  //   setTimeout(injectNewPageScript, 500);
+  // }
+
+  
 }
