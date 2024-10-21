@@ -1,24 +1,32 @@
-const roomInfo = document.getElementById('roomInfo');
+const createRoomButton = document.getElementById('createRoom');
+const joinRoomButton = document.getElementById('joinRoom');
+const setUpButton = document.getElementById('setUp');
+const roomIdInput = document.getElementById('roomId');
+const roomInfoElement = document.getElementById('roomInfo');
 
-document.getElementById('createRoom').addEventListener('click', () => {
+
+createRoomButton.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'createRoom' }, (response) => {
-      roomInfo.textContent = `Room created: ${response.roomId}`;
+      roomInfoElement.textContent = `Room created: ${response.roomId}`;
+      createRoomButton.hidden = true;
     });
   });
   
-document.getElementById('joinRoom').addEventListener('click', () => {
-  const roomId = document.getElementById('roomId').value;
+joinRoomButton.addEventListener('click', () => {
+  const roomId = roomIdInput.value;
   chrome.runtime.sendMessage({ action: 'joinRoom', roomId: roomId });
-  roomInfo.textContent = `Joined Room: ${roomId}`;
+  roomInfoElement.textContent = `Joined Room: ${roomId}`;
 });
 
-document.getElementById('setUp').addEventListener('click', () => {
+setUpButton.addEventListener('click', () => {
   chrome.runtime.sendMessage({ action: 'ready' });
-  roomInfo.textContent = 'Ready to sync';
+  roomInfoElement.textContent = 'Ready to sync';
+  setUpButton.hidden = true;
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   chrome.runtime.sendMessage({ action: 'roomId' }, (response) => {
-    if (response.roomId) roomInfo.textContent = `Current Room ID: ${response.roomId}`;
+    if (response.roomId) roomInfoElement.textContent = `Current Room ID: ${response.roomId}`;
   });
 });
+

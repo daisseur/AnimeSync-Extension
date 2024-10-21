@@ -22,7 +22,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const data = JSON.stringify({
           action: message.action,
           currentTime: message.currentTime,
-          roomId: roomId
+          roomId: roomId,
+          timestamp: Date.now(),
         });
         socket.send(data);
       }
@@ -36,6 +37,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       notifyContentScript('ready');
       break;
 
+    case 'redirect':
+      chrome.tabs.update(sender.tab.id, { url: message.url }, (tab) => {
+        // Attendre que la page soit chargée avant d'injecter le script
+        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+          if (tabId === tab.id && info.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(listener);
+            
+            // Injecter le script dans la nouvelle page
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              function: injectNewPageScript
+            });
+          }
+        });
+      });
+      break;
     default:
       console.warn(`Unknown action: ${message.action}`);
   }
@@ -81,17 +98,18 @@ function initializeSocket(roomId) {
 // Gère les messages entrants du serveur via WebSocket
 function handleIncomingMessage(data) {
   if (data.action && data.currentTime !== undefined) {
-    notifyContentScript(`sync${capitalize(data.action)}`, data.currentTime);
+    notifyContentScript(`sync${capitalize(data.action)}`, data.currentTime, data.timestamp);
   }
 }
 
-function notifyContentScript(action, currentTime = null) {
-  chrome.tabs.query({ url: "*://*.anime-sama.fr/*" }, (tabs) => {
+function notifyContentScript(action, currentTime = null, timestamp = null) {
+  chrome.tabs.query({ url: ["*://*.anime-sama.fr/*", "*://vidmoly.to/*"] }, (tabs) => {
     if (tabs.length > 0) {
       console.log(JSON.stringify(tabs, null, 2));
       chrome.tabs.sendMessage(tabs[0].id, {
         action: action,
-        currentTime: currentTime
+        currentTime: currentTime,
+        timestamp: timestamp
       }, () => {
         if (chrome.runtime.lastError) {
           console.warn('Error sending message:', chrome.runtime.lastError.message);
@@ -110,45 +128,101 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'redirect') {
-    chrome.tabs.update(sender.tab.id, { url: message.url }, (tab) => {
-      // Attendre que la page soit chargée avant d'injecter le script
-      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-        if (tabId === tab.id && info.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(listener);
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   if (message.action === 'redirect') {
+//     chrome.tabs.update(sender.tab.id, { url: message.url }, (tab) => {
+//       // Attendre que la page soit chargée avant d'injecter le script
+//       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+//         if (tabId === tab.id && info.status === 'complete') {
+//           chrome.tabs.onUpdated.removeListener(listener);
           
-          // Injecter le script dans la nouvelle page
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            function: injectNewPageScript
-          });
-        }
-      });
-    });
-  }
-});
+//           // Injecter le script dans la nouvelle page
+//           chrome.scripting.executeScript({
+//             target: { tabId: tab.id },
+//             function: injectNewPageScript
+//           });
+//         }
+//       });
+//     });
+//   }
+// });
 
 function injectNewPageScript() {
+  console.clear();
   console.log('Script injecté dans la nouvelle page');
-  
-  // Votre code pour la nouvelle page ici
-  let video = document.getElementById("video_html5_wrapper_html5_api");
+
+  // Load video
+  const player = document.querySelector("#vplayer > div.jw-wrapper.jw-reset > div.jw-media.jw-reset > video");
+  if (player) {
+    player.click();
+  }
+
+  const video = [...document.querySelectorAll('video')].find(v => v.src.startsWith('blob:https://vidmoly.to/'));
+
   if (video) {
     console.log("Video loaded", video);
+    video.pause();
+    
+    let syncPlayActive = false;
+    let syncPauseActive = false;
+    let syncSeekActive = false;
+
     video.addEventListener('play', () => {
-      chrome.runtime.sendMessage({ action: 'play', currentTime: video.currentTime });
+      if (!syncPlayActive) {
+        chrome.runtime.sendMessage({ action: 'play', currentTime: video.currentTime });
+        console.log("play");
+      }
+      syncPlayActive = false;
     });
 
     video.addEventListener('pause', () => {
-      chrome.runtime.sendMessage({ action: 'pause', currentTime: video.currentTime });
+      if (!syncPauseActive) {
+        chrome.runtime.sendMessage({ action: 'pause', currentTime: video.currentTime });
+        console.log("pause");
+      }
+      syncPauseActive = false;
     });
 
     video.addEventListener('seeked', () => {
-      chrome.runtime.sendMessage({ action: 'seek', currentTime: video.currentTime });
+      if (!syncSeekActive) {
+        chrome.runtime.sendMessage({ action: 'seek', currentTime: video.currentTime });
+        console.log("seek");
+      }
+      syncSeekActive = false;
+    });
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log('Message received:', message);
+      const delay = message.timestamp ? (Date.now() - message.timestamp) / 1000 : 0;
+      switch(message.action) {
+        
+        case 'syncPlay':
+          video.currentTime = message.currentTime + delay;
+          video.play();
+          syncPlayActive = true;
+          sendResponse({ success: true });
+          break;
+        case 'syncPause':
+          video.currentTime = message.currentTime + delay;
+          video.pause();
+          syncPauseActive = true;
+          sendResponse({ success: true });
+          break;
+        case 'syncSeek':
+          video.currentTime = message.currentTime + delay;
+          syncSeekActive = true;
+          sendResponse({ success: true });
+          break;
+        default:
+          console.warn(`Unknown action: ${message.action}`);
+      }
     });
 
     // Informer le background script que tout est prêt
     chrome.runtime.sendMessage({ action: 'videoReady' });
+    
+  } else {
+    console.log("Video element not found, retrying...");
+    setTimeout(injectNewPageScript, 500);
   }
 }
