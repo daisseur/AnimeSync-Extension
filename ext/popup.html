@@ -66,6 +66,13 @@
   <input id="roomId" type="text" placeholder="Enter Room ID" />
   <button id="joinRoom">Join Room</button>
 
+  <select id="protocolInput">
+    <option value="ws" selected>ws</option>
+    <option value="wss">wss</option>
+  </select>
+  <input type="text" id="hostInput" value="localhost">
+  <input type="number" id="portInput" value="3007">
+  
   <div id="roomInfo"></div>
 
   <script src="popup.js"></script>

@@ -1,9 +1,24 @@
 let socket = null;
 let roomId = null;
+let protocol = "ws";
+let host = "localhost";
+let port = "3000";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(`Receiving..`, message, sender);
   switch (message.action) {
+    case 'changeProtocol':
+      protocol = message.protocol;
+      break;
+
+    case 'changeHost':
+      host = message.host;
+      break;
+
+    case 'changePort':
+      port = message.port;
+      break;
+
     case 'createRoom':
       roomId = generateRoomId();
       initializeSocket(roomId);
@@ -13,6 +28,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'joinRoom':
       roomId = message.roomId;
       initializeSocket(roomId);
+      break;
+
+    case 'protocol':
+      sendResponse({ protocol });
+      break;
+
+    case 'host':
+      sendResponse({ host });
+      break;
+
+    case 'port':
+      sendResponse({ port });
       break;
 
     case 'play':
@@ -69,7 +96,7 @@ function initializeSocket(roomId) {
     socket.close();  // Ferme toute connexion WebSocket précédente avant d'en ouvrir une nouvelle
   }
 
-  socket = new WebSocket('ws://localhost:3000');
+  socket = new WebSocket(`${protocol}://${host}:${port}`);
 
   socket.addEventListener('open', () => {
     const joinMessage = JSON.stringify({ action: 'joinRoom', roomId: roomId });
@@ -128,25 +155,6 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (message.action === 'redirect') {
-//     chrome.tabs.update(sender.tab.id, { url: message.url }, (tab) => {
-//       // Attendre que la page soit chargée avant d'injecter le script
-//       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-//         if (tabId === tab.id && info.status === 'complete') {
-//           chrome.tabs.onUpdated.removeListener(listener);
-          
-//           // Injecter le script dans la nouvelle page
-//           chrome.scripting.executeScript({
-//             target: { tabId: tab.id },
-//             function: injectNewPageScript
-//           });
-//         }
-//       });
-//     });
-//   }
-// });
-
 function injectNewPageScript() {
   console.clear();
   console.log('Script injecté dans la nouvelle page');
@@ -162,7 +170,7 @@ function injectNewPageScript() {
   if (video) {
     console.log("Video loaded", video);
     video.pause();
-    
+
     let syncPlayActive = false;
     let syncPauseActive = false;
     let syncSeekActive = false;

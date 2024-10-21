@@ -1,30 +1,6 @@
 console.log('SynMedia API loaded');
 let video;
 
-// function initializeVideo() {
-//   video = document.getElementById("video_html5_wrapper_html5_api");
-//   if (video) {
-//     console.log("Video loaded", video);
-//     // Écouter les événements de lecture/pause et de positionnement
-//     video.addEventListener('play', () => {
-//       chrome.runtime.sendMessage({ action: 'play', currentTime: video.currentTime });
-//     });
-
-//     video.addEventListener('pause', () => {
-//       chrome.runtime.sendMessage({ action: 'pause', currentTime: video.currentTime });
-//     });
-
-//     video.addEventListener('seeked', () => {
-//       chrome.runtime.sendMessage({ action: 'seek', currentTime: video.currentTime });
-//     });
-
-//     // Informer le background script que tout est prêt
-//     chrome.runtime.sendMessage({ action: 'videoReady' });
-//   } else {
-//     console.log("Video element not found, retrying...");
-//     setTimeout(initializeVideo, 500);
-//   }
-// }
 
 // Fonction pour initialiser l'écouteur de messages
 function initializeMessageListener() {
@@ -44,7 +20,7 @@ function initializeMessageListener() {
         video.currentTime = message.currentTime;
         break;
       case 'ready':
-        console.log('Ready to sync');
+        { console.log('Ready to sync');
         const playerDF = document.getElementById('playerDF');
         if (playerDF && playerDF.src) {
           chrome.runtime.sendMessage({ 
@@ -54,7 +30,7 @@ function initializeMessageListener() {
         } else {
           console.warn('playerDF not found or src not set');
         }
-        break;
+        break; }
       default:
         console.warn('Unknown action:', message.action);
     }
@@ -64,9 +40,7 @@ function initializeMessageListener() {
 // Initialiser tout
 function initialize() {
   initializeMessageListener();
-  // initializeVideo();
 }
 
-// Exécuter l'initialisation immédiatement et également après le chargement du DOM
 initialize();
 document.addEventListener('DOMContentLoaded', initialize);

@@ -1,7 +1,9 @@
-const { time } = require('console');
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+
+const PORT = process.env.PORT || 3007;
+const HOST = process.env.HOST || '0.0.0.0';
 
 const app = express();
 const server = http.createServer(app);
@@ -13,7 +15,7 @@ let rooms = {};
 wss.on('connection', (ws) => {
   // Lorsque le client envoie un message
   ws.on('message', (message) => {
-    const startTime = Date.now();
+
     const data = JSON.parse(message);
 
     if (data.action === 'joinRoom') {
@@ -59,6 +61,6 @@ wss.on('connection', (ws) => {
 });
 
 // Démarrer le serveur sur le port 3000
-server.listen({port: 3000, host: '0.0.0.0'}, () => {
-  console.log('Server is running on port 3000');
+server.listen({port: PORT, host: HOST}, () => {
+  console.log(`Server started on http://${HOST}:${PORT}`);
 });
