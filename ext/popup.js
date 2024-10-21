@@ -18,6 +18,9 @@ hostInput.addEventListener('input', () => {
 
 portInput.addEventListener('input', () => {
   chrome.runtime.sendMessage({ action: 'changePort', port: portInput.value });
+  if (portInput.value == 0) {
+    protocolInput.value = 'wss';
+  }
 });
 
 createRoomButton.addEventListener('click', () => {
