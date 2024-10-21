@@ -120,7 +120,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function generateRoomId() {
   const value = Math.random().toFixed(2) * 100;
   const letters = Math.random().toString(26).substring(2, 4).toUpperCase();
-  return letters + "-" + militaryAlphabet[value % 26];
+  return letters + "-" + militaryAlphabet[value % 25];
 }
 
 // Initialise la connexion WebSocket avec le serveur

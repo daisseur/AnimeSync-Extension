@@ -35,7 +35,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server, pingTimeout: 0 });
 
 let rooms = {};
 
