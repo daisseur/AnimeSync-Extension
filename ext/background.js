@@ -1,8 +1,8 @@
 let socket = null;
 let roomId = null;
-let protocol = "ws";
-let host = "localhost";
-let port = "3007";
+let protocol = "wss";
+let host = "aserver.daisseur.online";
+let port = "0";
 
 const militaryAlphabet = [
   'alpha',
