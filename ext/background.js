@@ -1,5 +1,6 @@
 let socket = null;
 let roomId = null;
+let url = null;
 let protocol = "ws";
 let host = "localhost";
 let port = "3007";
@@ -33,7 +34,19 @@ const militaryAlphabet = [
   'zulu'
 ];
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+async function getRoomUrl(url) {
+  const api = `${protocol == "wss" ? "https" : "http"}://${host}:${port}/listRooms?url=${encodeURIComponent(url)}`;
+  console.log(api);
+  const response = await fetch(api);
+  const data = await response.json();
+  if (data.length > 0) {
+    return data[0].roomId;
+  } else {
+    return null;
+  }
+}
+
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   console.log(`Receiving..`, message, sender);
   switch (message.action) {
     case 'changeProtocol':
@@ -56,8 +69,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'joinRoom':
       roomId = message.roomId;
-      initializeSocket(roomId);
+      initializeSocket(roomId, url);
       break;
+
+    case 'autoRoom':
+      {
+        let autoRoomUrl = await getRoomUrl(url);
+        if (autoRoomUrl) {
+          roomId = autoRoomUrl;
+        } else {
+          roomId = generateRoomId();
+        }
+        initializeSocket(roomId, url);
+        sendResponse({ roomId });
+        break; 
+      }
 
     case 'protocol':
       sendResponse({ protocol });
@@ -71,6 +97,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ port });
       break;
 
+    case 'url':
+      url = message.url;
+      break;
+
+
     case 'play':
     case 'pause':
     case 'seek':
@@ -79,7 +110,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           action: message.action,
           currentTime: message.currentTime,
           roomId: roomId,
-          timestamp: Date.now(),
+          url: url,
+          timestamp: message.timestamp,
         });
         socket.send(data);
       }
@@ -120,11 +152,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function generateRoomId() {
   const value = Math.random().toFixed(2) * 100;
   const letters = Math.random().toString(26).substring(2, 4).toUpperCase();
-  return letters + "-" + militaryAlphabet[value % 25];
+  return letters + "-" + militaryAlphabet[value % 25] || "prince";
 }
 
 // Initialise la connexion WebSocket avec le serveur
-function initializeSocket(roomId) {
+function initializeSocket(roomId, url) {
   if (socket) {
     socket.close();  // Ferme toute connexion WebSocket précédente avant d'en ouvrir une nouvelle
   }
@@ -132,7 +164,7 @@ function initializeSocket(roomId) {
   socket = new WebSocket(`${protocol}://${host}${port==="0"?"":`:${port}`}`);
 
   socket.addEventListener('open', () => {
-    const joinMessage = JSON.stringify({ action: 'joinRoom', roomId: roomId });
+    const joinMessage = JSON.stringify({ action: 'joinRoom', roomId: roomId, url: url });
     socket.send(joinMessage);
     console.log('Joined room:', roomId);
   });
@@ -208,9 +240,11 @@ function injectNewPageScript() {
     let syncPauseActive = false;
     let syncSeekActive = false;
 
+    chrome.runtime.sendMessage({ action: 'url', url: window.location.href });
+
     video.addEventListener('play', () => {
       if (!syncPlayActive) {
-        chrome.runtime.sendMessage({ action: 'play', currentTime: video.currentTime });
+        chrome.runtime.sendMessage({ action: 'play', currentTime: video.currentTime, timestamp: Date.now() });
         console.log("play");
       }
       syncPlayActive = false;
@@ -218,7 +252,7 @@ function injectNewPageScript() {
 
     video.addEventListener('pause', () => {
       if (!syncPauseActive) {
-        chrome.runtime.sendMessage({ action: 'pause', currentTime: video.currentTime });
+        chrome.runtime.sendMessage({ action: 'pause', currentTime: video.currentTime, timestamp: Date.now() });
         console.log("pause");
       }
       syncPauseActive = false;
@@ -226,7 +260,7 @@ function injectNewPageScript() {
 
     video.addEventListener('seeked', () => {
       if (!syncSeekActive) {
-        chrome.runtime.sendMessage({ action: 'seek', currentTime: video.currentTime });
+        chrome.runtime.sendMessage({ action: 'seek', currentTime: video.currentTime, timestamp: Date.now() });
         console.log("seek");
       }
       syncSeekActive = false;
@@ -268,5 +302,16 @@ function injectNewPageScript() {
   //   setTimeout(injectNewPageScript, 500);
   // }
 
-  
+  window.addEventListener('beforeunload', (event) => {
+    const navigationEntry = performance.getEntriesByType('navigation')[0];
+    const navigationType = navigationEntry.type;
+    if (navigationType == "reload") {
+      console.log('Reloading page...');
+      alert('Reloading page...');
+      event.preventDefault();
+      chrome.runtime.sendMessage({action: "redirect", url: window.location.href});
+    }
+    
+    return event;
+  });
 }

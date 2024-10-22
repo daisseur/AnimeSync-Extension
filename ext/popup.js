@@ -1,5 +1,6 @@
 const createRoomButton = document.getElementById('createRoom');
 const joinRoomButton = document.getElementById('joinRoom');
+const autoRoomButton = document.getElementById('autoRoom');
 const setUpButton = document.getElementById('setUp');
 const roomIdInput = document.getElementById('roomId');
 const roomInfoElement = document.getElementById('roomInfo');
@@ -24,7 +25,7 @@ portInput.addEventListener('input', () => {
 });
 
 createRoomButton.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'createRoom' }, (response) => {
+    chrome.runtime.sendMessage({ action: 'createRoom', url: window.location.href }, (response) => {
       roomInfoElement.textContent = `Room created: ${response.roomId}`;
       createRoomButton.hidden = true;
     });
@@ -32,7 +33,7 @@ createRoomButton.addEventListener('click', () => {
   
 joinRoomButton.addEventListener('click', () => {
   const roomId = roomIdInput.value;
-  chrome.runtime.sendMessage({ action: 'joinRoom', roomId: roomId });
+  chrome.runtime.sendMessage({ action: 'joinRoom', roomId: roomId, url: window.location.href });
   roomInfoElement.textContent = `Joined Room: ${roomId}`;
 });
 
@@ -42,11 +43,25 @@ setUpButton.addEventListener('click', () => {
   setUpButton.hidden = true;
 });
 
+autoRoomButton.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'autoRoom', url: window.location.href }, (response) => {
+    roomInfoElement.textContent = 'Joined auto room';
+    if (response.roomId) {
+      roomInfoElement.innerHTML = `Auto Room ID: <strong>${response.roomId}</strong>`;
+      roomIdInput.value = response.roomId;
+    }
+  });
+});
+
+
 
 // Initialize values
 document.addEventListener('DOMContentLoaded', () => {
   chrome.runtime.sendMessage({ action: 'roomId' }, (response) => {
-    if (response.roomId) roomInfoElement.textContent = `Current Room ID: ${response.roomId}`;
+    if (response.roomId) {
+      roomInfoElement.innerHTML = `Current Room ID: <strong>${response.roomId}</strong>`;
+      roomIdInput.value = response.roomId;
+    }
   });
 
   chrome.runtime.sendMessage({ action: 'protocol' }, (response) => {
@@ -66,5 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
       portInput.value = response.port;
     }
   });
+
 });
 
