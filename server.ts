@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import express, { Request, Response } from 'express';
 import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
-import {broadcastState, joinRoom, leaveRoom, rooms } from './src/rooms';
+import {broadcastState, getRooms, joinRoom, leaveRoom, rooms } from './src/rooms';
 import { debug, info } from './src/log';
 
 
@@ -25,9 +25,10 @@ app.use((req: Request, res: Response, next) => {
 app.get("/listRooms", (req: Request, res: Response) => {
   const url = req.query.url as string;
   if (url) {
-    res.json(Array.from(rooms.values()).filter((room) => room.url === url));
+    res.json(getRooms().filter((room) => room.url === url));
   } else {
-    res.json(rooms.values());
+    const returnRooms = getRooms().map((room) => ({ roomId: room.roomId, url: room.url }));
+    res.json(Array.from(returnRooms));
   }
 });
 
@@ -39,7 +40,7 @@ const wss = new WebSocketServer({ server });
 
 // Lorsque le client se connecte via WebSocket
 wss.on('connection', (ws: WebSocket, req: Request) => {
-  const clientIp = req.socket.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   info("WS", chalk.blue(`[${clientIp}] Client connected`));
 
   // Lorsque le client envoie un message

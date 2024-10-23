@@ -16,11 +16,21 @@ export function createRoom(roomId: string, url: string) {
     return rooms.get(roomId);
 }
 
+export function getRooms() {
+    // replace client in room.client by empty string
+    return Array.from(rooms.values()).map((room) => ({
+        roomId: room.roomId,
+        url: room.url,
+        clients: room.clients.length
+    }));
+}
+
 export function joinRoom(roomId: string, ws: WebSocket, url: string) {
     const room = createRoom(roomId, url);
     if (room?.clients.includes(ws)) return;
-    debug("all rooms", JSON.stringify(rooms, null, 2));
-    return rooms.get(roomId)?.clients.push(ws);
+    rooms.get(roomId)?.clients.push(ws);
+    debug("all rooms", JSON.stringify(getRooms(), null, 2));
+    return room?.clients;
 }
 
 export function broadcastState(ws: WebSocket, roomId: string, action: string, currentTime: number, timestamp: number) {
