@@ -9,7 +9,8 @@ export default [
       sourceType: "module",
       globals: {
         ...globals.browser, // Inclut les variables globales du navigateur
-        chrome: "readonly" // Ajoute la variable "chrome" en mode readonly
+        ...globals.webextensions,
+        ...globals.serviceworker,
       }
     },
     rules: {

@@ -27,7 +27,7 @@ app.get("/listRooms", (req: Request, res: Response) => {
   if (url) {
     res.json(Array.from(rooms.values()).filter((room) => room.url === url));
   } else {
-    res.json(Object.keys(rooms));
+    res.json(rooms.values());
   }
 });
 
@@ -67,7 +67,7 @@ wss.on('connection', (ws: WebSocket, req: Request) => {
     } else if (['play', 'pause', 'seek'].includes(data.action)) {
       const roomId = data.roomId;
       info("ROOM STATUS", chalk.magenta(`[${clientIp}] ${data.action} => '${roomId}'`));
-      broadcastState(roomId, data.action, (data.currentTime as number), (data.timestamp as number));
+      broadcastState(ws, roomId, data.action, (data.currentTime as number), (data.timestamp as number));
     }
   });
 

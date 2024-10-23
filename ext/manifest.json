@@ -16,6 +16,10 @@
       {
         "matches": ["*://*.anime-sama.fr/*"],
         "js": ["contentScript.js"]
+      },
+      {
+        "matches": ["*://vidmoly.to/embed*"],
+        "js": ["embedScript.js"]
       }
     ]
   }

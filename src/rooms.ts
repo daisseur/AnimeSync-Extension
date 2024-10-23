@@ -23,9 +23,9 @@ export function joinRoom(roomId: string, ws: WebSocket, url: string) {
     return rooms.get(roomId)?.clients.push(ws);
 }
 
-export function broadcastState(roomId: string, action: string, currentTime: number, timestamp: number) {
+export function broadcastState(ws: WebSocket, roomId: string, action: string, currentTime: number, timestamp: number) {
     rooms.get(roomId)?.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === WebSocket.OPEN && client !== ws) {
             client.send(JSON.stringify({
                 action,
                 currentTime,

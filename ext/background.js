@@ -35,10 +35,13 @@ const militaryAlphabet = [
 ];
 
 async function getRoomUrl(url) {
-  const api = `${protocol == "wss" ? "https" : "http"}://${host}:${port}/listRooms?url=${encodeURIComponent(url)}`;
+  const api = `${protocol == "wss" ? "https" : "http"}://${host}${port == "0" ? "" : `:${port}`}/listRooms${url ? `?url=${encodeURIComponent(url)}` : ''}`;
   console.log(api);
   const response = await fetch(api);
   const data = await response.json();
+  if (!url) {
+    return data;
+  }
   if (data.length > 0) {
     return data[0].roomId;
   } else {
@@ -84,6 +87,29 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         sendResponse({ roomId });
         break; 
       }
+    
+    case 'listRooms':
+      {
+        const rooms = await getRoomUrl(url);
+        chrome.tabs.query({ url: ["*://*.anime-sama.fr/*"] }, (tabs) => {
+          if (tabs.length > 0) {
+            console.log(JSON.stringify(tabs, null, 2));
+            chrome.tabs.sendMessage(tabs[0].id, {
+              action: "listRooms",
+              rooms: rooms
+            }, () => {
+              if (chrome.runtime.lastError) {
+                console.warn('Error sending message:', chrome.runtime.lastError.message);
+              } else {
+                console.log('Message sent successfully');
+              }
+            });
+          } else {
+            console.warn('No matching tab found to send message.');
+          }
+        });
+        break;
+      }
 
     case 'protocol':
       sendResponse({ protocol });
@@ -127,20 +153,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
     case 'redirect':
       console.log('Redirecting to:', message.url);
-      chrome.tabs.update(sender.tab.id, { url: message.url }, (tab) => {
-        // Attendre que la page soit chargée avant d'injecter le script
-        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-          if (tabId === tab.id && info.status === 'complete') {
-            chrome.tabs.onUpdated.removeListener(listener);
-            
-            // Injecter le script dans la nouvelle page
-            chrome.scripting.executeScript({
-              target: { tabId: tab.id },
-              function: injectNewPageScript
-            });
-          }
-        });
-      });
+      chrome.tabs.update(sender.tab.id, { url: message.url });
       break;
     default:
       console.warn(`Unknown action: ${message.action}`);
@@ -218,100 +231,4 @@ function notifyContentScript(action, currentTime = null, timestamp = null) {
 // Capitalise la première lettre d'une chaîne (ex: "play" -> "Play")
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function injectNewPageScript() {
-  console.clear();
-  console.log('Script injecté dans la nouvelle page');
-
-  // Load video
-  const player = document.querySelector("#vplayer > div.jw-wrapper.jw-reset > div.jw-media.jw-reset > video");
-  if (player) {
-    player.click();
-  }
-
-  const video = [...document.querySelectorAll('video')].find(v => v.src.startsWith('blob:https://vidmoly.to/'));
-
-  if (video) {
-    console.log("Video loaded", video);
-    video.pause();
-
-    let syncPlayActive = false;
-    let syncPauseActive = false;
-    let syncSeekActive = false;
-
-    chrome.runtime.sendMessage({ action: 'url', url: window.location.href });
-
-    video.addEventListener('play', () => {
-      if (!syncPlayActive) {
-        chrome.runtime.sendMessage({ action: 'play', currentTime: video.currentTime, timestamp: Date.now() });
-        console.log("play");
-      }
-      syncPlayActive = false;
-    });
-
-    video.addEventListener('pause', () => {
-      if (!syncPauseActive) {
-        chrome.runtime.sendMessage({ action: 'pause', currentTime: video.currentTime, timestamp: Date.now() });
-        console.log("pause");
-      }
-      syncPauseActive = false;
-    });
-
-    video.addEventListener('seeked', () => {
-      if (!syncSeekActive) {
-        chrome.runtime.sendMessage({ action: 'seek', currentTime: video.currentTime, timestamp: Date.now() });
-        console.log("seek");
-      }
-      syncSeekActive = false;
-    });
-
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      console.log('Message received:', message);
-      const delay = message.timestamp ? (Date.now() - message.timestamp) / 1000 : 0;
-      switch(message.action) {
-        
-        case 'syncPlay':
-          video.currentTime = message.currentTime + delay;
-          video.play();
-          syncPlayActive = true;
-          sendResponse({ success: true });
-          break;
-        case 'syncPause':
-          video.currentTime = message.currentTime + delay;
-          video.pause();
-          syncPauseActive = true;
-          sendResponse({ success: true });
-          break;
-        case 'syncSeek':
-          video.currentTime = message.currentTime + delay;
-          syncSeekActive = true;
-          sendResponse({ success: true });
-          break;
-        default:
-          console.warn(`Unknown action: ${message.action}`);
-      }
-    });
-
-    // Informer le background script que tout est prêt
-    chrome.runtime.sendMessage({ action: 'videoReady' });
-    
-  } 
-  // else {
-  //   console.log("Video element not found, retrying...");
-  //   setTimeout(injectNewPageScript, 500);
-  // }
-
-  window.addEventListener('beforeunload', (event) => {
-    const navigationEntry = performance.getEntriesByType('navigation')[0];
-    const navigationType = navigationEntry.type;
-    if (navigationType == "reload") {
-      console.log('Reloading page...');
-      alert('Reloading page...');
-      event.preventDefault();
-      chrome.runtime.sendMessage({action: "redirect", url: window.location.href});
-    }
-    
-    return event;
-  });
 }
