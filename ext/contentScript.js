@@ -29,7 +29,7 @@ function initializeMessageListener() {
               const li = document.createElement('li');
               li.style = 'list-style-type: none; color: white; empty-cells: show; padding: 5px;';
               const button = document.createElement('button');
-              button.textContent = room.url;
+              button.textContent = room.roomId;
               button.addEventListener('click', () => {
                 window.location.href = room.url;
               });

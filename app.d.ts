@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import * as Express from 'express';
+import Express from 'express';
 
 declare module 'ws' {
   interface WebSocket {
@@ -22,6 +22,11 @@ declare global {
   }
   
   namespace Express {
+    interface Application {
+      getClientIp(req: Request): string;
+      port: number | string;
+      host: string;
+    }
     interface Request {
       [key: string]: any;
     }
