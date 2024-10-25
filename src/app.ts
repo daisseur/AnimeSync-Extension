@@ -24,12 +24,16 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
+app.get("/", (req: Request, res: Response) => {
+  res.redirect("https://github.com/daisseur/AnimeSync-Extension");
+})
+
 app.get("/listRooms", (req: Request, res: Response) => {
   const url = req.query.url as string;
   if (url) {
     res.json(getRooms().filter((room) => room.url === url));
   } else {
-    const returnRooms = getRooms().map((room) => ({ roomId: room.roomId, url: room.url }));
+    const returnRooms = getRooms()
     res.json(Array.from(returnRooms));
   }
 });

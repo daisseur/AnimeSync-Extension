@@ -1,7 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Video Sync Extension",
-    "version": "1.0",
+    "name": "AnimeSync-Extension",
+    "version": "1.1.0",
+    "description": "Sync anime between multiple clients",
     "permissions": ["activeTab", "scripting", "storage"],
     "host_permissions": [
       "<all_urls>"
@@ -14,11 +15,11 @@
     },
     "content_scripts": [
       {
-        "matches": ["*://*.anime-sama.fr/*"],
+        "matches": ["https://*.anime-sama.fr/*", "https://v5.voiranime.com/*"],
         "js": ["contentScript.js"]
       },
       {
-        "matches": ["*://vidmoly.to/embed*"],
+        "matches": ["https://vidmoly.to/embed*", "https://video.sibnet.ru/shell.php?videoid=*", "https://sendvid.com/embed/*", "https://streamtape.com/e/*", "https://richardstorehalf.com/e/*"],
         "js": ["embedScript.js"]
       }
     ]
