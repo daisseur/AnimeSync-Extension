@@ -5,6 +5,8 @@ let host = "aserver.daisseur.online";
 let port = "0";
 let url = null;
 
+const supported_urls = ["*://*.anime-sama.fr/*", "*://v5.voiranime.com/*", "*://vidmoly.to/embed*", "*://video.sibnet.ru/shell.php?videoid=*", "*://sendvid.com/embed/*"];
+
 const militaryAlphabet = [
   'alpha',
   'bravo',
@@ -40,7 +42,7 @@ async function getRoomUrl(url) {
   const response = await fetch(api);
   const data = await response.json();
   if (!url) {
-    return data;
+    return Array.from(data);
   }
   if (data.length > 0) {
     return data[0].roomId;
@@ -208,9 +210,8 @@ function handleIncomingMessage(data) {
 }
 
 function notifyContentScript(action, currentTime = null, timestamp = null) {
-  chrome.tabs.query({ url: ["*://*.anime-sama.fr/*", "*://vidmoly.to/*"] }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs.length > 0) {
-      console.log(JSON.stringify(tabs, null, 2));
       chrome.tabs.sendMessage(tabs[0].id, {
         action: action,
         currentTime: currentTime,

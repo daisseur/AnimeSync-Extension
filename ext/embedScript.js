@@ -11,7 +11,7 @@ function injectNewPageScript() {
     player.click();
   }
 
-  const video = [...document.querySelectorAll('video')].find(v => v.src.startsWith('blob:https://vidmoly.to/'));
+  const video = document.querySelector("video");
 
   if (video) {
     console.log("Video loaded", video);
