@@ -1,8 +1,12 @@
 let socket = null;
+let intervals = [];
 let roomId = null;
 let protocol = "wss";
 let host = "aserver.daisseur.online";
 let port = "0";
+// let protocol = "ws";
+// let host = "localhost";
+// let port = "3007";
 let url = null;
 
 // const supported_urls = ["*://*.anime-sama.fr/*", "*://v5.voiranime.com/*", "*://vidmoly.to/embed*", "*://video.sibnet.ru/shell.php?videoid=*", "*://sendvid.com/embed/*"];
@@ -68,7 +72,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
     case 'createRoom':
       roomId = generateRoomId();
-      initializeSocket(roomId);
+      initializeSocket(roomId, url);
       sendResponse({ roomId });
       break;
 
@@ -112,7 +116,19 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         });
         break;
       }
-
+    case 'popupListRooms':
+      {
+        try {
+          getRoomUrl(url).then((rooms) => {
+            console.log("Rooms", rooms);
+            sendResponse(rooms);
+          });
+        } catch (error) {
+          console.error(error);
+        }
+        
+        break;
+      }
     case 'protocol':
       sendResponse({ protocol });
       break;
@@ -157,6 +173,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       console.log('Redirecting to:', message.url);
       chrome.tabs.update(sender.tab.id, { url: message.url });
       break;
+    case 'unload':
+      notifyContentScript('unload');  // actually useless
+      socket.close();
+      break;
     default:
       console.warn(`Unknown action: ${message.action}`);
   }
@@ -174,8 +194,16 @@ function generateRoomId() {
 function initializeSocket(roomId, url) {
   if (socket) {
     socket.close();  // Ferme toute connexion WebSocket précédente avant d'en ouvrir une nouvelle
+    intervals.forEach(interval => clearInterval(interval));
   }
 
+  intervals.push(setInterval(() => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ action: 'ping' }));
+    }
+  }, 10000));
+
+  
   socket = new WebSocket(`${protocol}://${host}${port==="0"?"":`:${port}`}`);
 
   socket.addEventListener('open', () => {

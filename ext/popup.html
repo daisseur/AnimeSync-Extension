@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Video Sync</title>
   <style>
+
     body {
       display: flex;
       flex-direction: column;
@@ -57,17 +58,27 @@
       margin-top: 1rem;
       text-align: center;
     }
+
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 1rem 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
   <h1>Video Sync</h1>
   <button id="setUp">Set up</button>
+  <button id="autoRoom" style="background-color: blueviolet; color: white; padding: 0.6rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer; width: 100%; margin: 0.1rem 0;">Auto Join Room</button>
+
+  <hr>
   <button id="createRoom">Create Room</button>
 
   <input id="roomId" type="text" placeholder="Enter Room ID" />
   <button id="joinRoom">Join Room</button>
-  <button id="autoRoom">Auto Join Room</button>
 
+  <hr>
   <select id="protocolInput">
     <option value="ws" selected>ws</option>
     <option value="wss">wss</option>

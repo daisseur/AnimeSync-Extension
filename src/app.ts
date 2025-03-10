@@ -31,7 +31,7 @@ app.get("/", (req: Request, res: Response) => {
 app.get("/listRooms", (req: Request, res: Response) => {
   const url = req.query.url as string;
   if (url) {
-    res.json(getRooms().filter((room) => room.url === url));
+    res.json(getRooms().filter((room) => room.url === url || !room.url));
   } else {
     const returnRooms = getRooms()
     res.json(Array.from(returnRooms));

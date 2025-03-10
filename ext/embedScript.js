@@ -2,6 +2,10 @@ function injectNewPageScript() {
   console.clear();
   console.log('Script injecté dans la nouvelle page');
 
+  window.addEventListener('beforeunload', () => {
+    chrome.runtime.sendMessage({ action: 'unload' });
+  });
+
   const state = injectUI();
   state.innerText = 'Loading...';
 

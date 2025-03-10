@@ -13,7 +13,7 @@ export const connection = (ws: WebSocket, req: Request) => {
       let data;
       try {
         data = JSON.parse(message) as {
-          action: 'joinRoom' | 'play' | 'pause' | 'seek';
+          action: 'joinRoom' | 'play' | 'pause' | 'seek' | 'ping';
           roomId: string;
           url: string;
           currentTime?: number;
@@ -35,6 +35,8 @@ export const connection = (ws: WebSocket, req: Request) => {
         const roomId = data.roomId;
         info("ROOM STATUS", `${data.action} => '${roomId}'`);
         broadcastState(ws, roomId, data.action, (data.currentTime as number), (data.timestamp as number));
+      } else if (data.action === 'ping') {
+        ws.send(JSON.stringify({ action: 'pong' }));
       }
     });
   
